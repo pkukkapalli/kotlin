@@ -16,7 +16,6 @@
 
 package org.jetbrains.jet.plugin.libraries;
 
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -58,7 +57,7 @@ public final class DecompiledNavigationUtils {
         DeclarationDescriptor effectiveReferencedDescriptor = getEffectiveReferencedDescriptor(referencedDescriptor);
         VirtualFile virtualFile = findVirtualFileContainingDescriptor(project, effectiveReferencedDescriptor);
 
-        if (virtualFile == null || !DecompiledUtils.isKotlinCompiledFile(virtualFile)) return null;
+        if (virtualFile == null || !DecompiledUtils.isKotlinCompiledFile(project, virtualFile)) return null;
 
         JetDecompiledData data = JetDecompiledData.getDecompiledData(virtualFile, project);
         JetDeclaration jetDeclaration = data.getDeclarationForDescriptor(effectiveReferencedDescriptor);
@@ -100,8 +99,8 @@ public final class DecompiledNavigationUtils {
         if (containerFqName == null) {
             return null;
         }
-        VirtualFileFinder fileFinder = ServiceManager.getService(project, VirtualFileFinder.class);
-        VirtualFile virtualFile = fileFinder.find(containerFqName);
+        VirtualFileFinder fileFinder = VirtualFileFinder.SERVICE.getInstance(project);
+        VirtualFile virtualFile = fileFinder.findVirtualFile(containerFqName);
         if (virtualFile == null) {
             return null;
         }
