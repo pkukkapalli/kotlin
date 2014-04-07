@@ -20,6 +20,7 @@ import org.jetbrains.jet.lang.psi.JetForExpression
 import com.intellij.openapi.editor.Editor
 import org.jetbrains.jet.lang.psi.JetPsiFactory
 import org.jetbrains.jet.lang.psi.JetBlockExpression
+import org.jetbrains.jet.lang.psi.JetElement
 
 public class ConvertToForEachFunctionCallIntention : JetSelfTargetingIntention<JetForExpression>("convert.to.for.each.function.call.intention", javaClass()) {
     override fun isApplicableTo(element: JetForExpression): Boolean {
@@ -27,13 +28,21 @@ public class ConvertToForEachFunctionCallIntention : JetSelfTargetingIntention<J
     }
 
     override fun applyTo(element: JetForExpression, editor: Editor) {
+        fun buildStatements(statements: List<JetElement>): String {
+            return when {
+                statements.isEmpty() -> ""
+                statements.size() == 1 -> statements[0].getText()
+                else -> statements.fold(StringBuilder(), { acc, h -> acc.append("${h.getText()}\n") }).toString()
+            }
+        }
+
         val body = element.getBody()!!
         val bodyText = when (body) {
             is JetBlockExpression ->
-                if (body.getStatements().size() > 0)
-                    "${element.getLoopParameter()!!.getText()} -> ${body.getStatements().fold(StringBuilder(), { acc, h -> acc.append("${h.getText()}\n") }).toString()}"
-                else
-                    ""
+                when {
+                    element.getLoopParameter()!!.getTypeReference() != null -> " (${element.getLoopParameter()!!.getText()}) -> ${buildStatements(body.getStatements())}"
+                    else -> "${element.getLoopParameter()!!.getText()} -> ${buildStatements(body.getStatements())}"
+                }
             else -> "${element.getLoopParameter()!!.getText()} -> ${body.getText()}"
         }
 
